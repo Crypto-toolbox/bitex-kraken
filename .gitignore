@@ -1,0 +1,10 @@
+__pycache__
+*.pyc
+.idea
+.pyre
+.tox
+.coverage
+docs/build*
+*egg-info/
+.circleci/.bumpversion.cfg
+.envrc

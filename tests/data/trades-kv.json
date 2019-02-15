@@ -1,0 +1,24 @@
+[
+  {
+    "price": "51584.40000",
+    "size": "0.20000000",
+    "side": "b",
+    "type": "l",
+    "misc": "",
+    "pair": "XXBTZUSD",
+    "ts": "1613634481.9544",
+    "uid": "<uid>",
+    "received": "<ts>"
+  },
+  {
+    "price": "51584.50000",
+    "size": "0.00200000",
+    "side": "a",
+    "type": "l",
+    "misc": "",
+    "pair": "XXBTZUSD",
+    "received": "<ts>",
+    "uid": "<uid>",
+    "ts": "1613634481.9561"
+  }
+]

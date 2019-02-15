@@ -1,0 +1,215 @@
+version: 2.1
+
+environment:
+  GIT_COMMIT_DESC: git log --format=oneline -n 1 $CIRCLE_SHA1
+  # This must be set in a job, either explicitly using bash or from a script.
+  # If it is not set, the deploy scripts will NOT execute.
+  DEPLOY_TYPE: None
+
+################################################################################
+#                                                                              #
+# YAML Aliases for our Circle-CI configuration.                                #
+#                                                                              #
+################################################################################
+
+job_defaults: &job_defaults
+  working_directory: ~/ci
+  docker:
+    - image: circleci/python:3.6.4
+
+master_only: &master_only
+  filters:
+    branches:
+      only:
+        - master
+
+tags_only: &tags_only
+  filters:
+    branches:
+      ignore: /.*/
+    tags:
+      only: /^v\d+\.\d+.*/
+
+ignore_master: &ignore_master
+  filters:
+    branches:
+      ignore:
+        - master
+    tags:
+      ignore: /.*/
+
+################################################################################
+#                                                                              #
+# Circle-CI Command definitions.                                               #
+#                                                                              #
+################################################################################
+
+commands:
+  job_setup:
+    description: Prepare the workspace and venv for job execution.
+    steps:
+      - attach_workspace:
+          at: "/home/circleci"
+
+      - run:
+          name: Prepend VirtualEnv to $PATH
+          command: echo 'export PATH=/home/circleci/ci/venv/bin:$PATH' >> ${BASH_ENV}
+
+
+  lint:
+    description: Execute linters
+    steps:
+      - run:
+          name: Run Linters
+          command: cd /home/circleci/ci && make style-check
+
+
+  unit_tests:
+    description: Run unittests.
+    steps:
+      - run:
+          name: Run tests
+          command: tox -e testenv
+
+  tag_release:
+    description: Determine and create new Tag
+    steps:
+      - run:
+          command: |
+            if [[ "$(make -C /home/circleci/ci tag-type)" == "minor" ]]; then
+              make tag-feature
+              git push --tags
+            elif [[ "$(make  -C /home/circleci/ci tag-type)" == "patch" ]]; then
+              make tag-patch
+              git push --tags
+            else
+              echo "No tag type was set - commit must start with FEAT or FIX in order to be tagged."
+              echo "Skipping tagging"
+            fi
+
+  check_packaging:
+    description: |
+      Package our library and verify it's installable via pypi.
+      Requires TWINE_USERNAME, TWINE_PASSWORD, and TWINE_REPOSITORY to be set.
+    steps:
+      - run:
+          command: make packaging
+
+  publish_on_pypi:
+    description: |
+      Package and upload the project to pypi.
+      Requires TWINE_USERNAME, TWINE_PASSWORD, and TWINE_REPOSITORY to be set.
+    steps:
+      - run:
+          command: twine upload dist/*
+
+
+  restore_project_caches:
+    description: Restore pip and venv caches, if any.
+    steps:
+      - run: echo "$CACHE_VERSION" > cache_version
+      - restore_cache:
+          key: "{{ checksum 'pyproject.toml' }}-{{ checksum 'cache_version' }}"
+
+      - restore_cache:
+          key: "pip-cache-{{ checksum 'cache_version' }}"
+
+  save_project_caches:
+    description: Save the pip cache and venv to the CircleCI Cache.
+    steps:
+      - run: echo "$CACHE_VERSION" > cache_version
+      - save_cache:
+          key: "{{ checksum 'pyproject.toml' }}-{{ checksum 'cache_version'}}"
+
+          paths:
+            - "/home/circleci/ci/venv"
+
+      - save_cache:
+          key: "pip-cache-{{ checksum 'cache_version'}}"
+          paths:
+            - "/home/circleci/.cache/pip"
+
+################################################################################
+#                                                                              #
+# Circle-CI Job definitions.                                                   #
+#                                                                              #
+################################################################################
+
+jobs:
+  preparation:
+    working_directory: ~/ci
+    docker:
+      - image: circleci/python:3.6.4
+    steps:
+      - checkout
+      - restore_project_caches
+      - job_setup
+
+      - run: python -m venv /home/circleci/ci/venv
+      - run: pip install --upgrade pip
+      - run: make ci-deps
+
+      - persist_to_workspace:
+          paths:
+            - ci
+          root: "/home/circleci"
+
+  finalize:
+    <<: *job_defaults
+    steps:
+      - save_caches
+
+  static-checks:
+    <<: *job_defaults
+    steps:
+      - job_setup
+      - lint
+
+  unit-tests:
+    <<: *job_defaults
+    steps:
+      - job_setup
+      - unit_tests
+
+  tagging:
+    <<: *job_defaults
+    steps:
+      - job_setup
+      - tag_release
+
+  publish:
+    <<: *job_defaults
+    steps:
+      - job_setup
+      - check_packaging
+      - publish_on_pypi
+
+################################################################################
+#                                                                              #
+# Circle-CI Workflow definitions.                                              #
+#                                                                              #
+################################################################################
+
+workflows:
+
+  PR-Workflow:
+    jobs:
+      - preparation: *ignore_master
+      - static-checks: {"requires": ["preparation"]}
+      - unit-tests: {"requires": ["preparation"]}
+
+  Commit-Workflow:
+    jobs:
+      - preparation: *master_only
+      - static-checks: {"requires": ["preparation"]}
+      - unit-tests: {"requires": ["preparation"]}
+      - tagging:
+          requires:
+          - static-checks
+          - unit-tests
+
+  Release-Workflow:
+    jobs:
+      - preparation: *tags_only
+      - unit-tests: {"requires": ["preparation"]}
+      - publish: {"requires": ["unit-tests"]}

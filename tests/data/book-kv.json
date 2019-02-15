@@ -1,0 +1,62 @@
+[
+  {
+    "received": "<ts>",
+    "pos": "0",
+    "pair": "XXBTZUSD",
+    "side": "ask",
+    "price": "51978.80000",
+    "vol": "0.343",
+    "ts": "1613635393",
+    "uid": "<uid>"
+  },
+  {
+    "received": "<ts>",
+    "pos": "1",
+    "pair": "XXBTZUSD",
+    "side": "ask",
+    "price": "51978.90000",
+    "vol": "0.647",
+    "ts": "1613635392",
+    "uid": "<uid>"
+  },
+  {
+    "received": "<ts>",
+    "pos": "2",
+    "pair": "XXBTZUSD",
+    "side": "ask",
+    "price": "51983.40000",
+    "vol": "0.236",
+    "ts": "1613635392",
+    "uid": "<uid>"
+  },
+  {
+    "received": "<ts>",
+    "pos": "0",
+    "pair": "XXBTZUSD",
+    "side": "bid",
+    "price": "51977.90000",
+    "vol": "0.100",
+    "ts": "1613635392",
+    "uid": "<uid>"
+  },
+  {
+    "received": "<ts>",
+    "pos": "1",
+    "pair": "XXBTZUSD",
+    "side": "bid",
+    "price": "51967.80000",
+    "vol": "0.032",
+    "ts": "1613635391",
+    "uid": "<uid>"
+  },
+  {
+    "received": "<ts>",
+    "pos": "2",
+    "pair": "XXBTZUSD",
+    "side": "bid",
+    "price": "51964.20000",
+    "vol": "0.100",
+    "ts": "1613635392",
+    "uid": "<uid>"
+  }
+]
