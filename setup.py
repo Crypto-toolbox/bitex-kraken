@@ -7,7 +7,7 @@ with open(path.join(here, 'README.rst'), encoding='utf-8') as f:
 
 setup(
     name="bitex-kraken",
-    version="0.1.0",
+    version="1.0.0",
     author='Nils Diefenbach',
     author_email='foss@deepbrook.io',
     description="Kraken extension for the Bitcoin Exchange (BitEx) REST API Framwork",
